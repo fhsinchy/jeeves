@@ -16,6 +16,14 @@ class Service:
         self.ports = ports
         self.volumes = volumes
 
+def stop_container(container):
+    container.stop()
+    echo(f"{container.labels['jeeves']} stopped succesfully!")
+
+def remove_container(container):
+    container.remove()
+    echo(f"{container.labels['jeeves']} removed succesfully!")
+
 
 @click.group()
 def jeeves():
@@ -63,8 +71,9 @@ def start(name):
 
 
 @click.command()
+@click.option("--all", default=False)
 @click.argument('name')
-def stop(name):
+def stop(all, name):
     client = docker.from_env()
 
     containers = client.containers.list(filters={
@@ -73,13 +82,22 @@ def stop(name):
     })
 
     filtered_containers = filter(
+        # TODO: find another way of filtering
         lambda container: container.labels['jeeves'].split('--')[0] == name, containers)
 
-    for container in filtered_containers:
-        container.stop()
-        echo(f"{container.name} stopped succesfully!")
-        container.remove(v=True)
-        echo(f"{container.name} removed succesfully!")
+    if all:
+        for container in filtered_containers:
+            stop_container(container)
+            remove_container(container)
+    else:
+        # TODO: make it so that this only shows up if the container count is greater than 1
+        for index, container in enumerate(filtered_containers):
+            echo(f"{index} --> {container.labels['jeeves']}")
+            selected_container = int(input(f"pick the container you want to stop: "))
+
+            stop_container(containers[selected_container])
+            remove_container(containers[selected_container])
+            
 
 
 jeeves.add_command(start)
