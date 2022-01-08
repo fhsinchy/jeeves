@@ -1,0 +1,8 @@
+{
+    "name": "mysql",
+    "image": "docker.io/mysql",
+    "tag": "latest",
+    "env": {
+        "MYSQL_ROOT_PASSWORD": "secret"
+    }
+}

@@ -24,7 +24,7 @@ setup(
         "Programming Language :: Python :: 3",
     ],
     py_modules=["jeeves"],
-    entry_points={"console_scripts": ["jeeves=jeeves:main"]},
+    entry_points={"console_scripts": ["jeeves=jeeves:jeeves"]},
     install_requires=[
         'docker',
         'click',
