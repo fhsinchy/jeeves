@@ -4,5 +4,13 @@
     "tag": "latest",
     "env": {
         "MYSQL_ROOT_PASSWORD": "secret"
+    },
+    "ports": {
+        "source": "3306/tcp",
+        "destination": 3306
+    },
+    "volumes": {
+        "name": "mysql-data",
+        "destination": "/var/lib/mysql"
     }
 }
