@@ -27,5 +27,6 @@ setup(
     entry_points={"console_scripts": ["jeeves=jeeves:main"]},
     install_requires=[
         'docker',
+        'click',
     ],
 )
