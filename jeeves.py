@@ -17,10 +17,9 @@ def remove_container(container):
     echo(f"{container.labels['jeeves']} removed succesfully!")
 
 
-def get_all_running_containers(client):
+def get_all_containers(client):
     return client.containers.list(filters={
         'label': 'jeeves',
-        'status': 'running'
     })
 
 
@@ -58,48 +57,64 @@ def start(default, name):
                 if volume != '':
                     service['volumes']['name'] = volume
 
-            echo(f"starting {service['name']}. hang tight!")
-            docker.from_env().containers.run(
-                image=f"{service['image']}:{service['tag']}", environment=service['env'], ports={
-                    service['ports']['source']: service['ports']['destination']
-                }, volumes={
-                    service['volumes']['name']: {
-                        'bind': service['volumes']['destination'],
-                        'mode': 'rw'
-                    }
-                }, labels={
-                    'jeeves': f"{service['name']}--{service['tag']}--{service['ports']['destination']}"
-                }, command=service['command'], detach=True)
-            echo(f"{service['name']} started succesfully!")
+            client = docker.from_env()
+            label = f"{service['name']}--{service['tag']}--{service['ports']['destination']}"
+
+            if len(client.containers.list(filters={'label': f"jeeves={label}"})):
+                echo('container is already running.')
+            elif len(client.containers.list(filters={'label': f"jeeves={label}", 'status': 'exited'})) > 0:
+                echo(f"starting previously created {service['name']} container.")
+                client.containers.list(filters={'label': f"jeeves={label}", 'status': 'exited'}).pop().start()
+            else:
+                echo(f"creating and starting a new {service['name']} container.")
+                client.containers.run(
+                    image=f"{service['image']}:{service['tag']}", environment=service['env'], ports={
+                        service['ports']['source']: service['ports']['destination']
+                    }, volumes={
+                        service['volumes']['name']: {
+                            'bind': service['volumes']['destination'],
+                            'mode': 'rw'
+                        }
+                    }, labels={
+                        'jeeves': label
+                    }, command=service['command'], detach=True)
+                echo(f"{service['name']} started succesfully!")
     else:
         echo(f"{name} is not a valid service name")
 
 
 @click.command()
+@click.option('-a', '--all', default=False, is_flag=True)
 @click.argument('name')
-def stop(name):
-    containers = get_all_running_containers(docker.from_env())
+def stop(all, name):
+    containers = get_all_containers(docker.from_env())
 
-    filtered_containers = tuple(filter(
-        lambda container: container.labels['jeeves'].split('--')[0] == name, containers))
+    if len(containers) > 0:
+        filtered_containers = tuple(filter(
+            lambda container: container.labels['jeeves'].split('--')[0] == name, containers))
 
-    if len(filtered_containers) > 1:
-        for index, container in enumerate(filtered_containers):
-            echo(f"{index} --> {container.labels['jeeves']}")
-        selected_container = int(input(
-            f"pick the container you want to stop (0 - {len(filtered_containers) - 1}): "))
+        if len(filtered_containers) > 0:
+            if all or len(filtered_containers) == 1:
+                for container in filtered_containers:
+                    stop_container(container)
+                    remove_container(container)
+            else:
+                for index, container in enumerate(filtered_containers):
+                    echo(f"{index} --> {container.labels['jeeves']}")
+                selected_container = int(input(
+                    f"pick the container you want to stop (0 - {len(filtered_containers) - 1}): "))
 
-        stop_container(containers[selected_container])
-        remove_container(containers[selected_container])
+                stop_container(containers[selected_container])
+                remove_container(containers[selected_container])
+        else:
+            echo(f"there are no {name} containers running.")
     else:
-        for container in filtered_containers:
-            stop_container(container)
-            remove_container(container)
+        echo('there are no containers running.')
 
 
 @click.command()
 def list():
-    containers = get_all_running_containers(docker.from_env())
+    containers = get_all_containers(docker.from_env())
 
     echo("{:<15} {:<20} {:<20}".format(
         'CONTAINER ID', 'CONTAINER NAME', 'CONTAINER LABEL'))
