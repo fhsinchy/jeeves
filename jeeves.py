@@ -8,13 +8,14 @@ from docker import client
 
 
 class Service:
-    def __init__(self, tag: str, name: str, image: str, env: dict, volumes: list, ports: dict):
+    def __init__(self, tag: str, name: str, image: str, env: dict, volumes: list, ports: dict, command: str):
         self.tag = tag
         self.name = name
         self.image = image
         self.env = env
         self.ports = ports
         self.volumes = volumes
+        self.command = command
 
 def stop_container(container):
     container.stop()
@@ -23,6 +24,12 @@ def stop_container(container):
 def remove_container(container):
     container.remove()
     echo(f"{container.labels['jeeves']} removed succesfully!")
+
+def get_all_running_containers(client):
+    return client.containers.list(filters={
+        'label': 'jeeves',
+        'status': 'running'
+    })
 
 
 @click.group()
@@ -46,6 +53,7 @@ def start(name):
                 env=service_configuration['env'],
                 ports=service_configuration['ports'],
                 volumes=service_configuration['volumes'],
+                command=service_configuration['command'],
             )
 
             labels = {
@@ -63,45 +71,46 @@ def start(name):
                 service.ports['source']: service.ports['destination']
             }
 
+            echo(f"starting {name}. hang tight!")
             client.containers.run(
-                image=f"{service.image}:{service.tag}", environment=service.env, ports=ports, volumes=volumes, labels=labels, detach=True)
-        echo(f"{name} started succesfully!")
+                image=f"{service.image}:{service.tag}", environment=service.env, ports=ports, volumes=volumes, labels=labels, command=service.command, detach=True)
+            echo(f"{name} started succesfully!")
     else:
         echo(f"{name} is not a valid service name")
 
 
 @click.command()
-@click.option("--all", default=False)
 @click.argument('name')
-def stop(all, name):
-    client = docker.from_env()
+def stop(name):
+    containers = get_all_running_containers(docker.from_env())
 
-    containers = client.containers.list(filters={
-        'label': 'jeeves',
-        'status': 'running'
-    })
+    filtered_containers = tuple(filter(lambda container: container.labels['jeeves'].split('--')[0] == name, containers))
 
-    filtered_containers = filter(
-        # TODO: find another way of filtering
-        lambda container: container.labels['jeeves'].split('--')[0] == name, containers)
-
-    if all:
-        for container in filtered_containers:
-            stop_container(container)
-            remove_container(container)
-    else:
-        # TODO: make it so that this only shows up if the container count is greater than 1
+    if len(filtered_containers) > 1:
         for index, container in enumerate(filtered_containers):
             echo(f"{index} --> {container.labels['jeeves']}")
-            selected_container = int(input(f"pick the container you want to stop: "))
+            selected_container = int(input(f"pick the container you want to stop (0 - {len(filtered_containers) - 1}): "))
 
             stop_container(containers[selected_container])
             remove_container(containers[selected_container])
+    else:
+        for container in filtered_containers:
+            stop_container(container)
+            remove_container(container)
             
+
+@click.command()
+def list():
+    containers = get_all_running_containers(docker.from_env())
+
+    for container in containers:
+        echo(container.labels['jeeves'])
+
 
 
 jeeves.add_command(start)
 jeeves.add_command(stop)
+jeeves.add_command(list)
 
 if __name__ == "__main__":
     jeeves()

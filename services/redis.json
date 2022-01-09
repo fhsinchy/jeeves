@@ -1,0 +1,15 @@
+{
+    "name": "redis",
+    "image": "docker.io/redis",
+    "tag": "latest",
+    "env": {},
+    "ports": {
+        "source": "6379/tcp",
+        "destination": 6379
+    },
+    "volumes": {
+        "name": "redis-data",
+        "destination": "/data"
+    },
+    "command": ""
+}

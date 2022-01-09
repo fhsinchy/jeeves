@@ -1,6 +1,6 @@
 {
-    "name": "mysql",
-    "image": "docker.io/mysql",
+    "name": "mariadb",
+    "image": "docker.io/mariadb",
     "tag": "latest",
     "env": {
         "MYSQL_ROOT_PASSWORD": "root"
@@ -10,7 +10,7 @@
         "destination": 3306
     },
     "volumes": {
-        "name": "mysql-data",
+        "name": "mariadb-data",
         "destination": "/var/lib/mysql"
     },
     "command": ""
