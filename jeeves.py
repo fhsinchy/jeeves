@@ -17,13 +17,52 @@ class Service:
         self.volumes = volumes
         self.command = command
 
+    def ask_questions(self):
+        tag = input(f"Which tag do you want to use? (default: {self.tag}): ")
+        if tag != '':
+            self.tag = tag
+
+        for key, value in self.env.items():
+            user_input = input(f"{key}? (default: {value}): ")
+            if user_input != '':
+                self.env[key] = user_input
+
+        port = input(
+            f"Which port do you want to use? (default: {self.ports['destination']}): ")
+        if port != '':
+            self.ports['destination'] = port
+
+        volume = input(
+            f"What would you like to call your volume? (default: {self.volumes['name']}): ")
+        if volume != '':
+            self.volumes['name'] = volume
+
+    def start_container(self):
+        self.ask_questions()
+        echo(f"starting {self.name}. hang tight!")
+        docker.from_env().containers.run(
+            image=f"{self.image}:{self.tag}", environment=self.env, ports={
+                self.ports['source']: self.ports['destination']
+            }, volumes={
+                self.volumes['name']: {
+                    'bind': self.volumes['destination'],
+                    'mode': 'rw'
+                }
+            }, labels={
+                'jeeves': f"{self.name}--{self.tag}--{self.ports['destination']}"
+            }, command=self.command, detach=True)
+        echo(f"{self.name} started succesfully!")
+
+
 def stop_container(container):
     container.stop()
     echo(f"{container.labels['jeeves']} stopped succesfully!")
 
+
 def remove_container(container):
     container.remove()
     echo(f"{container.labels['jeeves']} removed succesfully!")
+
 
 def get_all_running_containers(client):
     return client.containers.list(filters={
@@ -40,8 +79,6 @@ def jeeves():
 @click.command()
 @click.argument('name')
 def start(name):
-    client = docker.from_env()
-
     if path.exists(f"services/{name}.json"):
         with open(f"services/{name}.json") as f:
             service_configuration = json.load(f)
@@ -56,25 +93,7 @@ def start(name):
                 command=service_configuration['command'],
             )
 
-            labels = {
-                'jeeves': f"{service.name}--{service.tag}--{service.tag}--{service.ports['destination']}"
-            }
-
-            volumes = {
-                service.volumes['name']: {
-                    'bind': service.volumes['destination'],
-                    'mode': 'rw'
-                }
-            }
-
-            ports = {
-                service.ports['source']: service.ports['destination']
-            }
-
-            echo(f"starting {name}. hang tight!")
-            client.containers.run(
-                image=f"{service.image}:{service.tag}", environment=service.env, ports=ports, volumes=volumes, labels=labels, command=service.command, detach=True)
-            echo(f"{name} started succesfully!")
+            service.start_container()
     else:
         echo(f"{name} is not a valid service name")
 
@@ -84,28 +103,30 @@ def start(name):
 def stop(name):
     containers = get_all_running_containers(docker.from_env())
 
-    filtered_containers = tuple(filter(lambda container: container.labels['jeeves'].split('--')[0] == name, containers))
+    filtered_containers = tuple(filter(
+        lambda container: container.labels['jeeves'].split('--')[0] == name, containers))
 
     if len(filtered_containers) > 1:
         for index, container in enumerate(filtered_containers):
             echo(f"{index} --> {container.labels['jeeves']}")
-            selected_container = int(input(f"pick the container you want to stop (0 - {len(filtered_containers) - 1}): "))
+        selected_container = int(input(
+            f"pick the container you want to stop (0 - {len(filtered_containers) - 1}): "))
 
-            stop_container(containers[selected_container])
-            remove_container(containers[selected_container])
+        stop_container(containers[selected_container])
+        remove_container(containers[selected_container])
     else:
         for container in filtered_containers:
             stop_container(container)
             remove_container(container)
-            
+
 
 @click.command()
 def list():
     containers = get_all_running_containers(docker.from_env())
 
+    echo("{:<15} {:<20} {:<20}".format('CONTAINER ID','CONTAINER NAME','CONTAINER LABEL'))
     for container in containers:
-        echo(container.labels['jeeves'])
-
+        echo("{:<15} {:<20} {:<20}".format(container.short_id, container.name, container.labels['jeeves']))
 
 
 jeeves.add_command(start)
