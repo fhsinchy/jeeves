@@ -1,20 +1,18 @@
+import json
 import click
-from click.utils import echo
 import docker
 from os import path
-import json
-
 from docker import client
 
 
 def stop_container(container):
     container.stop()
-    echo(f"{container.labels['jeeves']} stopped succesfully!")
+    click.echo(f"{container.labels['jeeves']} container stopped succesfully.")
 
 
 def remove_container(container):
     container.remove()
-    echo(f"{container.labels['jeeves']} removed succesfully!")
+    click.echo(f"{container.labels['jeeves']} container removed succesfully.")
 
 
 def get_all_containers(client):
@@ -37,23 +35,23 @@ def start(default, name):
             service = json.load(f)
 
             if not default:
-                tag = input(
-                    f"Which tag do you want to use? (default: {service['tag']}): ")
+                tag = click.prompt(
+                    f"Which tag do you want to use?", type=str, default=service['tag'])
                 if tag != '':
                     service['tag'] = tag
 
                 for key, value in service['env'].items():
-                    user_input = input(f"{key}? (default: {value}): ")
+                    user_input = click.prompt(f"{key}?", type=str, default=value)
                     if user_input != '':
                         service['env'][key] = user_input
 
-                port = input(
-                    f"Which port do you want to use? (default: {service['ports']['destination']}): ")
+                port = click.prompt(
+                    f"Which port do you want to use?", type=int, default=service['ports']['destination'])
                 if port != '':
                     service['ports']['destination'] = port
 
-                volume = input(
-                    f"What would you like to call your volume? (default: {service['volumes']['name']}): ")
+                volume = click.prompt(
+                    f"What would you like to call your volume?", type=str, default=service['volumes']['name'])
                 if volume != '':
                     service['volumes']['name'] = volume
 
@@ -61,12 +59,15 @@ def start(default, name):
             label = f"{service['name']}--{service['tag']}--{service['ports']['destination']}"
 
             if len(client.containers.list(filters={'label': f"jeeves={label}"})):
-                echo('container is already running.')
+                click.echo('container with same attribute is already running.')
             elif len(client.containers.list(filters={'label': f"jeeves={label}", 'status': 'exited'})) > 0:
-                echo(f"starting previously created {service['name']} container.")
-                client.containers.list(filters={'label': f"jeeves={label}", 'status': 'exited'}).pop().start()
+                click.echo(
+                    f"starting previously created {service['name']} container.")
+                client.containers.list(
+                    filters={'label': f"jeeves={label}", 'status': 'exited'}).pop().start()
             else:
-                echo(f"creating and starting a new {service['name']} container.")
+                click.echo(
+                    f"creating and starting a new {service['name']} container.")
                 client.containers.run(
                     image=f"{service['image']}:{service['tag']}", environment=service['env'], ports={
                         service['ports']['source']: service['ports']['destination']
@@ -78,9 +79,9 @@ def start(default, name):
                     }, labels={
                         'jeeves': label
                     }, command=service['command'], detach=True)
-                echo(f"{service['name']} started succesfully!")
+                click.echo(f"{service['name']} started succesfully!")
     else:
-        echo(f"{name} is not a valid service name")
+        click.echo(f"{name} is not a valid service name.")
 
 
 @click.command()
@@ -100,27 +101,27 @@ def stop(all, name):
                     remove_container(container)
             else:
                 for index, container in enumerate(filtered_containers):
-                    echo(f"{index} --> {container.labels['jeeves']}")
-                selected_container = int(input(
-                    f"pick the container you want to stop (0 - {len(filtered_containers) - 1}): "))
+                    click.echo(f"{index} --> {container.labels['jeeves']}")
+                selected_container = click.prompt(
+                    f"pick the container you want to stop (0 - {len(filtered_containers) - 1})", type=int)
 
                 stop_container(containers[selected_container])
                 remove_container(containers[selected_container])
         else:
-            echo(f"there are no {name} containers running.")
+            click.echo(f"there are no {name} containers running.")
     else:
-        echo('there are no containers running.')
+        click.echo('there are no containers running.')
 
 
 @click.command()
 def list():
     containers = get_all_containers(docker.from_env())
 
-    echo("{:<15} {:<20} {:<20}".format(
+    click.echo("{:<15} {:<20} {:<20}".format(
         'CONTAINER ID', 'CONTAINER NAME', 'CONTAINER LABEL'))
     for container in containers:
-        echo("{:<15} {:<20} {:<20}".format(container.short_id,
-             container.name, container.labels['jeeves']))
+        click.echo("{:<15} {:<20} {:<20}".format(container.short_id,
+                                                 container.name, container.labels['jeeves']))
 
 
 jeeves.add_command(start)
