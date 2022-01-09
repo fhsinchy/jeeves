@@ -26,7 +26,7 @@ def jeeves():
     pass
 
 
-@click.command()
+@click.command(help='Starts a new jeeves container.')
 @click.option('-d', '--default', default=False, is_flag=True)
 @click.argument('name')
 def start(default, name):
@@ -41,7 +41,8 @@ def start(default, name):
                     service['tag'] = tag
 
                 for key, value in service['env'].items():
-                    user_input = click.prompt(f"{key}?", type=str, default=value)
+                    user_input = click.prompt(
+                        f"{key}?", type=str, default=value)
                     if user_input != '':
                         service['env'][key] = user_input
 
@@ -84,7 +85,7 @@ def start(default, name):
         click.echo(f"{name} is not a valid service name.")
 
 
-@click.command()
+@click.command(help='Stops a running jeeves container.')
 @click.option('-a', '--all', default=False, is_flag=True)
 @click.argument('name')
 def stop(all, name):
@@ -113,7 +114,7 @@ def stop(all, name):
         click.echo('there are no containers running.')
 
 
-@click.command()
+@click.command(help='Lists all running jeeves containers.')
 def list():
     containers = get_all_containers(docker.from_env())
 
