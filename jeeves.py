@@ -7,53 +7,6 @@ import json
 from docker import client
 
 
-class Service:
-    def __init__(self, tag: str, name: str, image: str, env: dict, volumes: list, ports: dict, command: str):
-        self.tag = tag
-        self.name = name
-        self.image = image
-        self.env = env
-        self.ports = ports
-        self.volumes = volumes
-        self.command = command
-
-    def ask_questions(self):
-        tag = input(f"Which tag do you want to use? (default: {self.tag}): ")
-        if tag != '':
-            self.tag = tag
-
-        for key, value in self.env.items():
-            user_input = input(f"{key}? (default: {value}): ")
-            if user_input != '':
-                self.env[key] = user_input
-
-        port = input(
-            f"Which port do you want to use? (default: {self.ports['destination']}): ")
-        if port != '':
-            self.ports['destination'] = port
-
-        volume = input(
-            f"What would you like to call your volume? (default: {self.volumes['name']}): ")
-        if volume != '':
-            self.volumes['name'] = volume
-
-    def start_container(self):
-        self.ask_questions()
-        echo(f"starting {self.name}. hang tight!")
-        docker.from_env().containers.run(
-            image=f"{self.image}:{self.tag}", environment=self.env, ports={
-                self.ports['source']: self.ports['destination']
-            }, volumes={
-                self.volumes['name']: {
-                    'bind': self.volumes['destination'],
-                    'mode': 'rw'
-                }
-            }, labels={
-                'jeeves': f"{self.name}--{self.tag}--{self.ports['destination']}"
-            }, command=self.command, detach=True)
-        echo(f"{self.name} started succesfully!")
-
-
 def stop_container(container):
     container.stop()
     echo(f"{container.labels['jeeves']} stopped succesfully!")
@@ -81,19 +34,42 @@ def jeeves():
 def start(name):
     if path.exists(f"services/{name}.json"):
         with open(f"services/{name}.json") as f:
-            service_configuration = json.load(f)
+            service = json.load(f)
 
-            service = Service(
-                tag=service_configuration['tag'],
-                name=service_configuration['name'],
-                image=service_configuration['image'],
-                env=service_configuration['env'],
-                ports=service_configuration['ports'],
-                volumes=service_configuration['volumes'],
-                command=service_configuration['command'],
-            )
+            # TODO: add option for default start
+            tag = input(
+                f"Which tag do you want to use? (default: {service['tag']}): ")
+            if tag != '':
+                service['tag'] = tag
 
-            service.start_container()
+            for key, value in service['env'].items():
+                user_input = input(f"{key}? (default: {value}): ")
+                if user_input != '':
+                    service['env'][key] = user_input
+
+            port = input(
+                f"Which port do you want to use? (default: {service['ports']['destination']}): ")
+            if port != '':
+                service['ports']['destination'] = port
+
+            volume = input(
+                f"What would you like to call your volume? (default: {service['volumes']['name']}): ")
+            if volume != '':
+                service['volumes']['name'] = volume
+
+            echo(f"starting {service['name']}. hang tight!")
+            docker.from_env().containers.run(
+                image=f"{service['image']}:{service['tag']}", environment=service['env'], ports={
+                    service['ports']['source']: service['ports']['destination']
+                }, volumes={
+                    service['volumes']['name']: {
+                        'bind': service['volumes']['destination'],
+                        'mode': 'rw'
+                    }
+                }, labels={
+                    'jeeves': f"{service['name']}--{service['tag']}--{service['ports']['destination']}"
+                }, command=service['command'], detach=True)
+            echo(f"{service['name']} started succesfully!")
     else:
         echo(f"{name} is not a valid service name")
 
@@ -124,9 +100,11 @@ def stop(name):
 def list():
     containers = get_all_running_containers(docker.from_env())
 
-    echo("{:<15} {:<20} {:<20}".format('CONTAINER ID','CONTAINER NAME','CONTAINER LABEL'))
+    echo("{:<15} {:<20} {:<20}".format(
+        'CONTAINER ID', 'CONTAINER NAME', 'CONTAINER LABEL'))
     for container in containers:
-        echo("{:<15} {:<20} {:<20}".format(container.short_id, container.name, container.labels['jeeves']))
+        echo("{:<15} {:<20} {:<20}".format(container.short_id,
+             container.name, container.labels['jeeves']))
 
 
 jeeves.add_command(start)
