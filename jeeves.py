@@ -30,32 +30,33 @@ def jeeves():
 
 
 @click.command()
+@click.option('-d', '--default', default=False, is_flag=True)
 @click.argument('name')
-def start(name):
+def start(default, name):
     if path.exists(f"services/{name}.json"):
         with open(f"services/{name}.json") as f:
             service = json.load(f)
 
-            # TODO: add option for default start
-            tag = input(
-                f"Which tag do you want to use? (default: {service['tag']}): ")
-            if tag != '':
-                service['tag'] = tag
+            if not default:
+                tag = input(
+                    f"Which tag do you want to use? (default: {service['tag']}): ")
+                if tag != '':
+                    service['tag'] = tag
 
-            for key, value in service['env'].items():
-                user_input = input(f"{key}? (default: {value}): ")
-                if user_input != '':
-                    service['env'][key] = user_input
+                for key, value in service['env'].items():
+                    user_input = input(f"{key}? (default: {value}): ")
+                    if user_input != '':
+                        service['env'][key] = user_input
 
-            port = input(
-                f"Which port do you want to use? (default: {service['ports']['destination']}): ")
-            if port != '':
-                service['ports']['destination'] = port
+                port = input(
+                    f"Which port do you want to use? (default: {service['ports']['destination']}): ")
+                if port != '':
+                    service['ports']['destination'] = port
 
-            volume = input(
-                f"What would you like to call your volume? (default: {service['volumes']['name']}): ")
-            if volume != '':
-                service['volumes']['name'] = volume
+                volume = input(
+                    f"What would you like to call your volume? (default: {service['volumes']['name']}): ")
+                if volume != '':
+                    service['volumes']['name'] = volume
 
             echo(f"starting {service['name']}. hang tight!")
             docker.from_env().containers.run(
