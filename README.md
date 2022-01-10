@@ -6,7 +6,7 @@ Running containers can be accessed via their exposed ports and can be paired wit
 
 Starting a service such as `mysql` is as simple as executing `jeeves start mysql` and you'll never have to look back at it.
 
-But `mysql` is not the only available service. A list of all the available services can be found on the [services](https://github.com/fhsinchy/jeeves/tree/master/services) directory
+But `mysql` is not the only available service. A list of all the available services can be found in the [data.py](https://github.com/fhsinchy/jeeves/blob/master/data.py) file.
 
 Jeeves is heavily inspired from [tighten/takeout](https://github.com/tighten/takeout) and [fhsinchy/tent](https://github.com/fhsinchy/tent) projects. It is an experimental project. Hence, care should be taken if you're using it in a critical environment.
 
