@@ -23,7 +23,7 @@ setup(
         "License :: OSI Approved :: GPL-3.0 License",
         "Programming Language :: Python :: 3",
     ],
-    py_modules=["jeeves"],
+    py_modules=["data", "jeeves"],
     entry_points={"console_scripts": ["jeeves=jeeves:jeeves"]},
     install_requires=[
         'docker',

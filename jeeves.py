@@ -3,6 +3,7 @@ import click
 import docker
 from os import path
 from docker import client
+from data import services
 
 
 def stop_container(container):
@@ -30,57 +31,56 @@ def jeeves():
 @click.option('-d', '--default', default=False, is_flag=True)
 @click.argument('name')
 def start(default, name):
-    if path.exists(f"services/{name}.json"):
-        with open(f"services/{name}.json") as f:
-            service = json.load(f)
+    if name in services:
+        service = services[name]
 
-            if not default:
-                tag = click.prompt(
-                    f"Which tag do you want to use?", type=str, default=service['tag'])
-                if tag != '':
-                    service['tag'] = tag
+        if not default:
+            tag = click.prompt(
+                f"Which tag do you want to use?", type=str, default=service['tag'])
+            if tag != '':
+                service['tag'] = tag
 
-                for key, value in service['env'].items():
-                    user_input = click.prompt(
-                        f"{key}?", type=str, default=value)
-                    if user_input != '':
-                        service['env'][key] = user_input
+            for key, value in service['env'].items():
+                user_input = click.prompt(
+                    f"{key}?", type=str, default=value)
+                if user_input != '':
+                    service['env'][key] = user_input
 
-                port = click.prompt(
-                    f"Which port do you want to use?", type=int, default=service['ports']['destination'])
-                if port != '':
-                    service['ports']['destination'] = port
+            port = click.prompt(
+                f"Which port do you want to use?", type=int, default=service['ports']['destination'])
+            if port != '':
+                service['ports']['destination'] = port
 
-                volume = click.prompt(
-                    f"What would you like to call your volume?", type=str, default=service['volumes']['name'])
-                if volume != '':
-                    service['volumes']['name'] = volume
+            volume = click.prompt(
+                f"What would you like to call your volume?", type=str, default=service['volumes']['name'])
+            if volume != '':
+                service['volumes']['name'] = volume
 
-            client = docker.from_env()
-            label = f"{service['name']}--{service['tag']}--{service['ports']['destination']}"
+        client = docker.from_env()
+        label = f"{service['name']}--{service['tag']}--{service['ports']['destination']}"
 
-            if len(client.containers.list(filters={'label': f"jeeves={label}"})):
-                click.echo('container with same attribute is already running.')
-            elif len(client.containers.list(filters={'label': f"jeeves={label}", 'status': 'exited'})) > 0:
-                click.echo(
-                    f"starting previously created {service['name']} container.")
-                client.containers.list(
-                    filters={'label': f"jeeves={label}", 'status': 'exited'}).pop().start()
-            else:
-                click.echo(
-                    f"creating and starting a new {service['name']} container.")
-                client.containers.run(
-                    image=f"{service['image']}:{service['tag']}", environment=service['env'], ports={
-                        service['ports']['source']: service['ports']['destination']
-                    }, volumes={
-                        service['volumes']['name']: {
-                            'bind': service['volumes']['destination'],
-                            'mode': 'rw'
-                        }
-                    }, labels={
-                        'jeeves': label
-                    }, command=service['command'], detach=True)
-                click.echo(f"{service['name']} started succesfully!")
+        if len(client.containers.list(filters={'label': f"jeeves={label}"})):
+            click.echo('container with same attribute is already running.')
+        elif len(client.containers.list(filters={'label': f"jeeves={label}", 'status': 'exited'})) > 0:
+            click.echo(
+                f"starting previously created {service['name']} container.")
+            client.containers.list(
+                filters={'label': f"jeeves={label}", 'status': 'exited'}).pop().start()
+        else:
+            click.echo(
+                f"creating and starting a new {service['name']} container.")
+            client.containers.run(
+                image=f"{service['image']}:{service['tag']}", environment=service['env'], ports={
+                    service['ports']['source']: service['ports']['destination']
+                }, volumes={
+                    service['volumes']['name']: {
+                        'bind': service['volumes']['destination'],
+                        'mode': 'rw'
+                    }
+                }, labels={
+                    'jeeves': label
+                }, command=service['command'], detach=True)
+            click.echo(f"{service['name']} started succesfully!")
     else:
         click.echo(f"{name} is not a valid service name.")
 
