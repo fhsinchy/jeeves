@@ -12,7 +12,7 @@ with open(os.path.join(HERE, "README.md")) as fid:
 setup(
     name="jeeves",
     version="0.0.1",
-    description="Recursively removes all files of given extension(s)",
+    description=" Docker based development-only dependency manager for Windows, Linux, and macOS",
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/fhsinchy/jeeves",
@@ -26,7 +26,7 @@ setup(
     py_modules=["data", "jeeves"],
     entry_points={"console_scripts": ["jeeves=jeeves:jeeves"]},
     install_requires=[
-        'docker',
         'click',
+        'docker'
     ],
 )
