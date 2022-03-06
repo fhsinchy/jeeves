@@ -1,7 +1,5 @@
-from docker import (
-    client,
-    from_env
-)
+from docker import from_env
+
 from click import (
     echo,
     group,
