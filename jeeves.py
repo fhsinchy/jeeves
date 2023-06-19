@@ -1,7 +1,5 @@
-from docker import (
-    client,
-    from_env
-)
+from docker import from_env
+
 from click import (
     echo,
     group,
@@ -46,7 +44,7 @@ def start(default, name):
 
         if not default:
             tag = prompt(
-                f"Which tag do you want to use?", type=str, default=service['tag'])
+                "Which tag do you want to use?", type=str, default=service['tag'])
             if tag != '':
                 service['tag'] = tag
 
@@ -57,12 +55,12 @@ def start(default, name):
                     service['env'][key] = user_input
 
             port = prompt(
-                f"Which port do you want to use?", type=int, default=service['ports']['destination'])
+                "Which port do you want to use?", type=int, default=service['ports']['destination'])
             if port != '':
                 service['ports']['destination'] = port
 
             volume = prompt(
-                f"What would you like to call your volume?", type=str, default=service['volumes']['name'])
+                "What would you like to call your volume?", type=str, default=service['volumes']['name'])
             if volume != '':
                 service['volumes']['name'] = volume
 

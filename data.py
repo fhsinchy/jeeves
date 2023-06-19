@@ -32,7 +32,7 @@ services = {
             "name": "mongo-data",
             "destination": "/data/db"
         },
-        "command": "--serviceExecutor adaptive"
+        "command": ""
     },
     "mysql": {
         "name": "mysql",

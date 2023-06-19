@@ -11,7 +11,7 @@ with open(os.path.join(HERE, "README.md")) as fid:
 # This call to setup() does all the work
 setup(
     name="jeeves",
-    version="0.0.1",
+    version="0.0.2",
     description=" Docker based development-only dependency manager for Windows, Linux, and macOS",
     long_description=README,
     long_description_content_type="text/markdown",
