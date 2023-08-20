@@ -1,0 +1,32 @@
+# pyproject.toml
+
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jeeves"
+version = "1.0.0"
+description = "Docker based development-only dependency manager for Windows, Linux, and macOS"
+readme = "README.md"
+authors = [{ name = "Farhan Hasin Chowdhury", email = "shovik.is.here@gmail.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: GPL-3.0 License",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["docker"]
+dependencies = [
+    "click==8.0.3",
+    "docker==4.2.2"
+]
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = ["pip-tools"]
+
+[project.urls]
+Homepage = "https://github.com/fhsinchy/jeeves"
+
+[project.scripts]
+jeeves = "jeeves:main"
